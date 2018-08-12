@@ -9,7 +9,6 @@ import System.IO
 main :: IO ()
 main = do
   args <- getArgs
-  putStrLn $ show args
   let file = args !! 0
   deck <- getDeck file
   newDeck <- walkDeck [] $ sort deck
