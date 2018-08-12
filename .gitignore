@@ -1,0 +1,5 @@
+.stack-work/
+deck.cabal
+*~
+tmp
+deck.test
