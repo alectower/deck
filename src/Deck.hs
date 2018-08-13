@@ -23,6 +23,7 @@ import Data.Text as T
 import Data.Vector as V
 import GHC.Generics
 import GHC.Word
+import System.Directory
 import Text.Regex.TDFA
 
 data Card = Card
@@ -98,13 +99,26 @@ updateOrder _ c = c
 
 getDeck :: String -> IO Deck
 getDeck file = do
-  s <- A.decode <$> BL.readFile file
+  deckPath <- deckLocation
+  s <- A.decode <$> BL.readFile (deckPath L.++ "/" L.++ file)
   case s of
     Just a -> return a
     Nothing -> return []
 
+deckLocation :: IO String
+deckLocation = do
+  dir <- getHomeDirectory
+  return $ dir L.++ "/.deck"
+
 writeDeck :: String -> Deck -> IO ()
-writeDeck file deck = BL.writeFile file $ A.encode deck
+writeDeck file deck = do
+  deckPath <- deckLocation
+  let filePath = deckPath L.++ "/" L.++ file
+  dirExists <- doesDirectoryExist deckPath
+  case dirExists of
+    False -> createDirectory deckPath
+    True -> return ()
+  BL.writeFile filePath $ A.encode deck
 
 readCsv :: String -> IO (Vector (Vector BL.ByteString))
 readCsv file = do

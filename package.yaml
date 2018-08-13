@@ -28,6 +28,7 @@ dependencies:
 - cassava
 - vector
 - utf8-string
+- directory
 
 library:
   source-dirs: src
