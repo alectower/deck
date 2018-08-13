@@ -12,14 +12,14 @@ main = do
   case args of
     [] -> do
       putStrLn
-        "Usage: deck-exe [import file.csv deck-name] [deck-name [num-cards]]"
+        "Usage: deck-exe [import file.csv deck-name] [deck-name [num-cards] [new-cards]]"
       putStrLn "Examples:"
       putStrLn
         "       deck-exe import file.csv mydeck # import csv to mydeck"
       putStrLn
-        "       deck-exe mydeck                 # Review cards from mydeck; default is 20"
+        "       deck-exe mydeck                 # Review cards from mydeck; num-cards default is 20, new-cards default is 5"
       putStrLn
-        "       deck-exe mydeck 10              # Review 10 cards from mydeck"
+        "       deck-exe mydeck 10              # Review 10 cards from mydeck, with 15 new"
     args -> do
       let first = args !! 0
       case first of
@@ -34,20 +34,32 @@ processImport [file, name] = importCsv file name
 processImport _ = putStrLn "Wrong number of arguments"
 
 processDeck :: [String] -> IO ()
+processDeck [file, numCards, numNewCards] =
+  cycleDeck
+    (file L.++ ".json")
+    (read numCards :: Int)
+    (read numNewCards :: Int)
 processDeck [file, numCards] =
-  cycleDeck (file L.++ ".json") (read numCards :: Int)
-processDeck [file] = cycleDeck (file L.++ ".json") 20
+  cycleDeck (file L.++ ".json") (read numCards :: Int) 5
+processDeck [file] = cycleDeck (file L.++ ".json") 20 5
 
-cycleDeck :: String -> Int -> IO ()
-cycleDeck file numCards = do
-  deck <- getDeck file
-  newDeck <- sessionDeck numCards $ sort deck
-  writeDeck file $ sort newDeck
-
-sessionDeck :: Int -> Deck -> IO Deck
-sessionDeck numCards origDeck = do
-  newDeck <- walkDeck [] $ L.take numCards origDeck
-  return $ newDeck L.++ (L.drop numCards origDeck)
+cycleDeck :: String -> Int -> Int -> IO ()
+cycleDeck file numCards numNewCards
+  | numCards <= numNewCards = do
+    putStrLn "num-cards must be greater than new-cards"
+  | otherwise = do
+    deck <- getDeck file
+    let sortedSplitDeck =
+          L.splitAt (numCards - numNewCards) $ L.reverse $ sort deck
+    let oldReview = fst sortedSplitDeck
+    let leftOver = snd sortedSplitDeck
+    let newCards = L.filter (\c -> numViews c == 0) leftOver
+    let newReview = L.take numNewCards newCards
+    let unReviewed = leftOver L.\\ newReview
+    return ()
+    updatedSessionDeck <-
+      walkDeck [] $ sort $ oldReview L.++ newReview
+    writeDeck file $ sort $ updatedSessionDeck L.++ unReviewed
 
 walkDeck :: Deck -> Deck -> IO Deck
 walkDeck newDeck [] = return newDeck

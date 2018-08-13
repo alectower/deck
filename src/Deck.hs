@@ -50,9 +50,9 @@ instance Ord Card where
                                                               , numViews = e
                                                               , numCorrect = f
                                                               }
+    | c /= f = compare c f
     | a /= d = compare a d
     | b /= e = compare b e
-    | c /= f = compare c f
     | otherwise = EQ
 
 type Deck = [Card]
