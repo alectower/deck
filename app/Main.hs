@@ -17,9 +17,9 @@ main = do
       putStrLn
         "       deck-exe import file.csv mydeck # import csv to mydeck"
       putStrLn
-        "       deck-exe mydeck                # Review cards from mydeck; default is 20"
+        "       deck-exe mydeck                 # Review cards from mydeck; default is 20"
       putStrLn
-        "       deck-exe mydeck 10             # Review 10 cards from mydeck"
+        "       deck-exe mydeck 10              # Review 10 cards from mydeck"
     args -> do
       let first = args !! 0
       case first of
