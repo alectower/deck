@@ -56,7 +56,6 @@ cycleDeck file numCards numNewCards
     let newCards = L.filter (\c -> numViews c == 0) leftOver
     let newReview = L.take numNewCards newCards
     let unReviewed = leftOver L.\\ newReview
-    return ()
     updatedSessionDeck <-
       walkDeck [] $ sort $ oldReview L.++ newReview
     writeDeck file $ sort $ updatedSessionDeck L.++ unReviewed
