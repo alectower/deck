@@ -25,6 +25,9 @@ dependencies:
 - regex-tdfa
 - aeson
 - bytestring
+- cassava
+- vector
+- utf8-string
 
 library:
   source-dirs: src

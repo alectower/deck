@@ -11,12 +11,18 @@ module Deck
   , incNumViews
   , getDeck
   , writeDeck
+  , importCsv
   ) where
 
-import Data.Aeson
-import Data.ByteString.Lazy as L
+import Data.Aeson as A
+import Data.ByteString.Lazy as BL
+import Data.ByteString.UTF8 as U
+import Data.Csv as Csv
+import Data.List as L
 import Data.Text as T
+import Data.Vector as V
 import GHC.Generics
+import GHC.Word
 import Text.Regex.TDFA
 
 data Card = Card
@@ -73,6 +79,7 @@ incNumCorrect :: Card -> Card
 incNumCorrect c = c {numCorrect = numCorrect c + 1}
 
 saveAnswer :: String -> Card -> Card
+saveAnswer "" c = c
 saveAnswer ans c
   | (lowerT $ back c) =~ (lower ans) = incNumCorrect c
   | otherwise = c
@@ -91,10 +98,45 @@ updateOrder _ c = c
 
 getDeck :: String -> IO Deck
 getDeck file = do
-  s <- decode <$> L.readFile file
+  s <- A.decode <$> BL.readFile file
   case s of
     Just a -> return a
     Nothing -> return []
 
-writeDeck :: Deck -> String -> IO ()
-writeDeck deck file = L.writeFile file $ encode deck
+writeDeck :: String -> Deck -> IO ()
+writeDeck file deck = BL.writeFile file $ A.encode deck
+
+readCsv :: String -> IO (Vector (Vector BL.ByteString))
+readCsv file = do
+  f <- BL.readFile file
+  let s =
+        Csv.decode NoHeader f :: Either String (Vector (Vector BL.ByteString))
+  case s of
+    Right rows -> return rows
+    Left _ -> return $ fromList []
+
+importCsv :: String -> String -> IO ()
+importCsv file name = do
+  rows <- readCsv file
+  let deckFile = name Prelude.++ ".json"
+  writeDeck deckFile . rowsToDeck [] $ rows
+
+rowsToDeck :: Deck -> Vector (Vector BL.ByteString) -> Deck
+rowsToDeck newDeck rows
+  | V.length rows == 0 = newDeck
+  | otherwise =
+    let front = U.toString $ toStrict $ rows ! 0 ! 0
+        back =
+          (lineBreak . lineBreak $ front) L.++
+          joinCols (V.drop 1 $ rows ! 0)
+     in rowsToDeck (makeCard front back : newDeck) $ V.drop 1 rows
+
+joinCols :: Vector BL.ByteString -> String
+joinCols cols = V.foldr concatCols "" cols
+
+concatCols :: BL.ByteString -> String -> String
+concatCols x y =
+  (lineBreak . lineBreak $ (U.toString $ toStrict x)) L.++ y
+
+lineBreak :: String -> String
+lineBreak x = x L.++ "\n"
