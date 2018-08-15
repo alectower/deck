@@ -14,6 +14,7 @@ module Deck
   , importCsv
   ) where
 
+import Control.Monad
 import Data.Aeson as A
 import Data.ByteString.Lazy as BL
 import Data.ByteString.UTF8 as U
@@ -82,7 +83,7 @@ incNumCorrect c = c {numCorrect = numCorrect c + 1}
 saveAnswer :: String -> Card -> Card
 saveAnswer "" c = c
 saveAnswer ans c
-  | (lowerT $ back c) =~ (lower ans) = incNumCorrect c
+  | lowerT (back c) =~ lower ans = incNumCorrect c
   | otherwise = c
 
 lower :: String -> String
@@ -115,9 +116,7 @@ writeDeck file deck = do
   deckPath <- deckLocation
   let filePath = deckPath L.++ "/" L.++ file
   dirExists <- doesDirectoryExist deckPath
-  case dirExists of
-    False -> createDirectory deckPath
-    True -> return ()
+  unless dirExists $ createDirectory deckPath
   BL.writeFile filePath $ A.encode deck
 
 readCsv :: String -> IO (Vector (Vector BL.ByteString))
@@ -146,11 +145,11 @@ rowsToDeck newDeck rows
      in rowsToDeck (makeCard front back : newDeck) $ V.drop 1 rows
 
 joinCols :: Vector BL.ByteString -> String
-joinCols cols = V.foldr concatCols "" cols
+joinCols = V.foldr concatCols ""
 
 concatCols :: BL.ByteString -> String -> String
 concatCols x y =
-  (lineBreak . lineBreak $ (U.toString $ toStrict x)) L.++ y
+  (lineBreak . lineBreak $ U.toString (toStrict x)) L.++ y
 
 lineBreak :: String -> String
 lineBreak x = x L.++ "\n"

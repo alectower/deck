@@ -21,7 +21,7 @@ main = do
       putStrLn
         "       deck-exe mydeck 10              # Review 10 cards from mydeck, with 15 new"
     args -> do
-      let first = args !! 0
+      let first = L.head args
       case first of
         "import" -> processImport (L.drop 1 args)
         deck -> processDeck args
@@ -45,7 +45,7 @@ processDeck [file] = cycleDeck (file L.++ ".json") 20 5
 
 cycleDeck :: String -> Int -> Int -> IO ()
 cycleDeck file numCards numNewCards
-  | numCards < numNewCards = do
+  | numCards < numNewCards =
     putStrLn "num-cards must be greater than or equal to new-cards"
   | otherwise = do
     deck <- getDeck file
@@ -53,8 +53,9 @@ cycleDeck file numCards numNewCards
     let reviewed = deck L.\\ unReviewed
     let oldReview = L.take (numCards - numNewCards) $ sort reviewed
     let newReview = L.take numNewCards unReviewed
-    let nonSessionDeck = deck L.\\ (oldReview L.++ newReview)
-    updatedSessionDeck <- walkDeck [] $ newReview L.++ oldReview
+    let sessionDeck = newReview L.++ oldReview
+    let nonSessionDeck = deck L.\\ sessionDeck
+    updatedSessionDeck <- walkDeck [] sessionDeck
     writeDeck file $ sort $ updatedSessionDeck L.++ nonSessionDeck
 
 walkDeck :: Deck -> Deck -> IO Deck
@@ -66,8 +67,7 @@ walkDeck newDeck (x:xs) = do
   walkDeck (updateCard ans ord x : newDeck) xs
 
 updateCard :: String -> String -> Card -> Card
-updateCard ans ord c =
-  saveAnswer ans . incNumViews . updateOrder ord $ c
+updateCard ans ord = saveAnswer ans . incNumViews . updateOrder ord
 
 frontInteraction :: Card -> IO String
 frontInteraction c = do
