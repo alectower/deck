@@ -62,7 +62,7 @@ makeCard :: String -> String -> Card
 makeCard f b =
   Card
     { front = T.pack f
-    , back = T.pack b
+    , back = T.replace (T.pack "\\n") (T.pack "\n") $ T.pack b
     , order = 1
     , numViews = 0
     , numCorrect = 0
