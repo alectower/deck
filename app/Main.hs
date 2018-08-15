@@ -45,20 +45,17 @@ processDeck [file] = cycleDeck (file L.++ ".json") 20 5
 
 cycleDeck :: String -> Int -> Int -> IO ()
 cycleDeck file numCards numNewCards
-  | numCards <= numNewCards = do
-    putStrLn "num-cards must be greater than new-cards"
+  | numCards < numNewCards = do
+    putStrLn "num-cards must be greater than or equal to new-cards"
   | otherwise = do
     deck <- getDeck file
-    let sortedSplitDeck =
-          L.splitAt (numCards - numNewCards) $ L.reverse $ sort deck
-    let oldReview = fst sortedSplitDeck
-    let leftOver = snd sortedSplitDeck
-    let newCards = L.filter (\c -> numViews c == 0) leftOver
-    let newReview = L.take numNewCards newCards
-    let unReviewed = leftOver L.\\ newReview
-    updatedSessionDeck <-
-      walkDeck [] $ sort $ oldReview L.++ newReview
-    writeDeck file $ sort $ updatedSessionDeck L.++ unReviewed
+    let unReviewed = L.filter (\c -> numViews c == 0) deck
+    let reviewed = deck L.\\ unReviewed
+    let oldReview = L.take (numCards - numNewCards) $ sort reviewed
+    let newReview = L.take numNewCards unReviewed
+    let nonSessionDeck = deck L.\\ (oldReview L.++ newReview)
+    updatedSessionDeck <- walkDeck [] $ newReview L.++ oldReview
+    writeDeck file $ sort $ updatedSessionDeck L.++ nonSessionDeck
 
 walkDeck :: Deck -> Deck -> IO Deck
 walkDeck newDeck [] = return newDeck
