@@ -29,6 +29,7 @@ dependencies:
 - vector
 - utf8-string
 - directory
+- random
 
 library:
   source-dirs: src

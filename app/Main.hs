@@ -5,6 +5,7 @@ import Data.Text
 import Deck
 import System.Environment
 import System.IO
+import System.Random
 
 main :: IO ()
 main = do
@@ -52,11 +53,17 @@ cycleDeck file numCards numNewCards
     let unReviewed = L.filter (\c -> numViews c == 0) deck
     let reviewed = deck L.\\ unReviewed
     let oldReview = L.take (numCards - numNewCards) $ sort reviewed
-    let newReview = L.take numNewCards unReviewed
+    gen <- getStdGen
+    let newReview = randUnReviewed gen numNewCards unReviewed
     let sessionDeck = newReview L.++ oldReview
     let nonSessionDeck = deck L.\\ sessionDeck
     updatedSessionDeck <- walkDeck [] sessionDeck
     writeDeck file $ sort $ updatedSessionDeck L.++ nonSessionDeck
+
+randUnReviewed :: StdGen -> Int -> Deck -> Deck
+randUnReviewed gen num deck =
+  let randIndexes = L.take num $ randomRs (0, (L.length deck) - 1) gen
+   in L.map (\x -> deck !! x) randIndexes
 
 walkDeck :: Deck -> Deck -> IO Deck
 walkDeck newDeck [] = return newDeck
